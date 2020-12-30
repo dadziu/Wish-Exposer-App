@@ -1,0 +1,224 @@
+<div class="container">
+  <div class="row mb-2 mt-2 text-center">
+    <div class="col-md-4">
+    </div>
+    <div class="col-md-4">
+      <h5>Wish Exposer</h5>
+      <small *ngIf="titleAction$ | async as title">{{ title }}</small>
+    </div>
+    <div class="col-md-4">
+    </div>
+  </div>
+
+  <!-- nav bar -->
+  <nav class="navbar navbar-expand-md breadcrumb">
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <div class="nav nav-pills">
+        <a class="nav-item nav-link ml-3" (click)="changeTitle('Items')" data-toggle="tab" routerLink="/wishlist">
+          <i class="fa fa-list"></i>
+          Wish list
+        </a>
+        <a class="nav-item nav-link ml-3" (click)="changeTitle('Users')" data-toggle="tab"
+           routerLink="/user/management">
+          <i class="fa fa-users"></i>
+          Users
+        </a>
+        <div class="nav-item nav-link move-right mr-3 dropdown">
+          <i class="fa fa-user"></i>
+          Hello {{user?.username}}!
+        </div>
+      </div>
+    </div>
+    <a class="dropdown-item ml-3" style="float: left" data-toggle="modal" data-target="#addItemModal">
+      <i class="fas fa-plus"></i>
+      Add item
+    </a>
+    <a class="dropdown-item ml-3" data-toggle="modal" data-target="#sendListModal">
+      <i class="far fa-paper-plane"></i>
+      Send my list
+    </a>
+  </nav>
+
+  <!-- list of items -->
+  <table class="table table-hover">
+    <thead class="table-borderless">
+    <tr class="text-center">
+      <th class="w-10">Name</th>
+      <th class="w-50">Description</th>
+      <th class="w-15">Url</th>
+      <th class="w-25">Action</th>
+    </tr>
+    </thead>
+    <tbody *ngFor="let item of items">
+    <tr class="text-center">
+      <td>{{item?.name}}</td>
+      <td>{{item?.description}}</td>
+      <td>{{item?.url}}</td>
+      <td>
+        <button type="submit" class="btn btn-outline-info" (click)="updateItem(item)"><i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-outline-danger" (click)="deleteItem(item)"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+
+  <!-- modal send list -->
+  <div class="modal draggable fade bd-example-modal-lg" id="sendListModal" tabindex="-1"
+       role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-center">Send wish list</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="">
+            <form (ngSubmit)="onSendList()">
+              <div [formGroup]="sendForm">
+                <label for="email">Email</label>
+                <input formControlName="email" type="text" name="email" required ngModel class="form-control">
+                <div *ngIf="submitted" class="invalid">
+                  <small *ngIf="email.invalid">Email is required.<br/></small>
+                  <small *ngIf="items.length == 0"> Wish list is empty.<br/></small>
+                </div>
+              </div>
+              <div>
+                <input name="isDynamicList" type="checkbox" [(ngModel)]="isDynamicList">
+                <label>&nbsp;send as link</label>
+              </div>
+
+              <button [hidden]="true" id="sendListButton" class="button" type="submit" class="btn btn-info"></button>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" (click)="getItemsForCurrentUser(false)" class="btn btn-secondary" data-dismiss="modal"
+                  id="closeSendListModalButton">Close
+          </button>
+          <button type="button" (click)="sendList()" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal add item -->
+  <div class="modal draggable fade bd-example-modal-lg" id="addItemModal" tabindex="-1"
+       role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-center">Add item</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="">
+            <form #newItemForm="ngForm" (ngSubmit)="onAddNewItem(newItemForm)">
+              <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" name="name" required ngModel class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="description">Description</label>
+                <input type="text" name="description" required ngModel class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="url">Url</label>
+                <input type="text" name="url" ngModel class="form-control">
+              </div>
+
+              <button [hidden]="true" id="addItemSaveButton" class="button" type="submit" class="btn btn-info">Add
+                item
+              </button>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" (click)="getItemsForCurrentUser(false)" class="btn btn-secondary" data-dismiss="modal"
+                  id="closeAddItemModalButton">Close
+          </button>
+          <button type="button" (click)="addItem()" [disabled]="newItemForm.invalid" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal edit item -->
+  <button [hidden]="true" type="button" id="openItemEdit" data-toggle="modal" data-target="#editItemModal">
+  </button>
+  <div class="modal draggable fade bd-example-modal-lg" id="editItemModal" tabindex="-1"
+       role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-center">Edit {{editItem?.name}}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="">
+            <form #editItemForm="ngForm">
+              <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" name="name" required
+                       [(ngModel)]="editItem.name" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="description">Description</label>
+                <input type="text" name="description" required
+                       [(ngModel)]="editItem.description" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="url">Url</label>
+                <input type="text" name="url"
+                       [(ngModel)]="editItem.url" class="form-control">
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" (click)="getItemsForCurrentUser(false)" class="btn btn-secondary" data-dismiss="modal"
+                  id="closeEditItemModalButton">Close
+          </button>
+          <button type="button" (click)="onUpdateItem()" [disabled]="editItemForm.invalid" class="btn btn-primary">Save
+            changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- modal delete item -->
+  <button [hidden]="true" type="button" id="openItemDelete" data-toggle="modal" data-target="#deleteItemModal">
+  </button>
+  <div class="modal draggable fade bd-example-modal-lg" id="deleteItemModal" tabindex="-1"
+       role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-center">Delete {{editItem?.name}}</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="">
+            Do you want to remove {{editItem?.name}} item?
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" (click)="getItemsForCurrentUser(false)" class="btn btn-secondary" data-dismiss="modal"
+                  id="closeDeleteItemModalButton">Close
+          </button>
+          <button type="button" (click)="onDeleteItem()" class="btn btn-primary">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
